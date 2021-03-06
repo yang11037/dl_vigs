@@ -30,7 +30,22 @@ def train_cls(net, epochs, batch_size, lr, gpu, patch_size):
         net.train()
 
         epoch_loss = 0
+        for i, (imgs, labels) in enumerate(train_loader):
+            if gpu:
+                imgs = imgs.cuda()
+                labels = labels.cuda()
 
+                logits = net(imgs)
+                labels = labels.view(-1)
+
+                loss = criterion(logits, labels.long())
+
+                epoch_loss = epoch_loss + loss.item()
+
+                optimizer.zero_grad()
+                loss.backward()
+                optimizer.step()
+            scheduler.step(epoch_loss)
 
 
 

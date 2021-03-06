@@ -43,15 +43,15 @@ class ClsDataset(data.Dataset):
 		if rows != columns:
 			max_len = max(rows, columns)
 			img_new = np.zeros((max_len, max_len, 3))
-			img_new[:rows, :columns, 3] = img_crop
+			img_new[:rows, :columns, :] = img_crop
 			img_crop = img_new
+		img_crop = cv2.resize(img_crop, self.patch_size)
 
 		transformer = transforms.Compose([transforms.ToTensor(),
 										  transforms.Normalize
 										  (mean=[0.485, 0.456, 0.406],
 										   std=[0.229, 0.224, 0.225])])
 		img_crop = transformer(img_crop)
-		img_crop = torch.reshape(img_crop, (3,) + tuple(self.patch_size))
 
 		if self.mode == "inference":
 			return img_crop
@@ -67,7 +67,8 @@ if __name__ == '__main__':
 	data_df = pd.read_csv("./data/train.csv", sep=',')
 	dataset = ClsDataset("/home/lqy/桌面/sofa_test/", data_df, "train", (224, 224))
 	dataloader = data.DataLoader(dataset, batch_size=10)
-	for img, label in dataloader:
+	for i, (img, label) in enumerate(dataloader):
+		print(i)
 		print(img.shape)
 		print(label.shape)
 		exit()
