@@ -1,5 +1,7 @@
 import torch
+import torch.nn as nn
 import torchvision
+import torch.utils.data as data
 
 from Dataset import ClsDataset
 
@@ -13,6 +15,22 @@ def train_cls(net, epochs, batch_size, lr, gpu, patch_size):
     train_dataset = ClsDataset(data_root, train_df, "train", patch_size)
     valid_dataset = ClsDataset(data_root, valid_df, "train", patch_size)
     test_dataset = ClsDataset(data_root, test_df, "train", patch_size)
+    train_loader = data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+    valid_loader = data.DataLoader(valid_dataset, batch_size=1, shuffle=False)
+    test_loader = data.DataLoader(test_dataset, batch_size=1, shuffle=False)
+
+
+    optimizer = torch.optim.Adam(net.parameters(), lr=lr)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=3, verbose=True)
+    criterion = nn.CrossEntropyLoss()
+    min_loss = 100
+
+    for epoch in range(epochs):
+        print('Starting epoch {}/{}'.format(epoch+1, epochs))
+        net.train()
+
+        epoch_loss = 0
+
 
 
 

@@ -64,11 +64,10 @@ class ClsDataset(data.Dataset):
 
 
 if __name__ == '__main__':
-	data_df = pd.read_csv("./data.csv", sep=',')
-	dataset = ClsDataset("./", data_df, "train", (224, 224))
-	dataloader = data.DataLoader(dataset, batch_size=1)
+	data_df = pd.read_csv("./data/train.csv", sep=',')
+	dataset = ClsDataset("/home/lqy/桌面/sofa_test/", data_df, "train", (224, 224))
+	dataloader = data.DataLoader(dataset, batch_size=10)
 	for img, label in dataloader:
-		img = img.permute(0, 2, 3, 1)[0, :, :, :].numpy()
-		img *= 255
-		cv2.imshow("1", img)
-		cv2.waitKey(0)
+		print(img.shape)
+		print(label.shape)
+		exit()
