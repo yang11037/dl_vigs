@@ -28,20 +28,30 @@ class ClsDataset(data.Dataset):
 		img_name = self.data_df.iloc[index]["img_name"] + ".jpg"
 		img_path = os.path.join(self.data_dir, img_name)
 		img = cv2.imread(img_path)
-		img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+		img_crop = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
-		x_left = self.data_df.iloc[index]["x"]
-		y_top = self.data_df.iloc[index]["y"]
-		w = self.data_df.iloc[index]["w"]
-		h = self.data_df.iloc[index]["h"]
+		# x_left = self.data_df.iloc[index]["x"]
+		# y_top = self.data_df.iloc[index]["y"]
+		# w = self.data_df.iloc[index]["w"]
+		# h = self.data_df.iloc[index]["h"]
+		#
+		# img_crop = img[y_top:y_top + h, x_left:x_left + w, :]
 
-		img_crop = img[y_top:y_top + h, x_left:x_left + w, :]
+		# 保证为方形
+		rows = img_crop.shape[0]
+		columns = img_crop.shape[1]
+		if rows != columns:
+			max_len = max(rows, columns)
+			img_new = np.zeros((max_len, max_len, 3))
+			img_new[:rows, :columns, 3] = img_crop
+			img_crop = img_new
+
 		transformer = transforms.Compose([transforms.ToTensor(),
 										  transforms.Normalize
 										  (mean=[0.485, 0.456, 0.406],
 										   std=[0.229, 0.224, 0.225])])
 		img_crop = transformer(img_crop)
-		# img_crop = torch.reshape(img_crop, (3,) + tuple(self.patch_size))
+		img_crop = torch.reshape(img_crop, (3,) + tuple(self.patch_size))
 
 		if self.mode == "inference":
 			return img_crop
