@@ -1,3 +1,5 @@
+import os
+
 import torch
 import torch.nn as nn
 import torchvision
@@ -12,9 +14,11 @@ import pandas as pd
 def train_cls(net, epochs, batch_size, lr, gpu, patch_size):
     data_root = "/home/lqy/桌面/sofa_test/"
     dir_checkpoint = "data/cp/resnet/"
-    train_df = pd.DataFrame("./data/train.csv")
-    valid_df = pd.DataFrame("./data/valid.csv")
-    test_df = pd.DataFrame("./data/test.csv")
+    if os.path.exists(dir_checkpoint) == 0:
+        os.mkdir(dir_checkpoint)
+    train_df = pd.read_csv("./data/train_new.csv")
+    valid_df = pd.read_csv("./data/valid.csv")
+    test_df = pd.read_csv("./data/test.csv")
     train_dataset = ClsDataset(data_root, train_df, "train", patch_size)
     valid_dataset = ClsDataset(data_root, valid_df, "train", patch_size)
     test_dataset = ClsDataset(data_root, test_df, "train", patch_size)
@@ -42,6 +46,7 @@ def train_cls(net, epochs, batch_size, lr, gpu, patch_size):
         net.train()
 
         epoch_loss = 0
+        i = 0
         for i, (imgs, labels) in enumerate(train_loader):
             if gpu:
                 imgs = imgs.cuda()
@@ -51,46 +56,48 @@ def train_cls(net, epochs, batch_size, lr, gpu, patch_size):
                 labels = labels.view(-1)
 
                 loss = criterion(logits, labels.long())
+                print("\tbatch {}, positive {}, loss: {}".format(i, torch.sum(labels), loss.item()))
 
                 epoch_loss = epoch_loss + loss.item()
 
                 optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
-            scheduler.step(epoch_loss)
+        scheduler.step(epoch_loss)
+        print('Epoch finished ! Loss: {}'. \
+              format(epoch_loss / (i + 1)))
 
-            print('Epoch finished ! Loss: {}'. \
-                  format(epoch_loss / (i + 1)))
+        acc, recall, precision, specificity, auc, th, losses = \
+            eval_cls(net, valid_loader, gpu)
+        print('acc: {}, recall: {}, precision: {}, specificity: {}, auc: {}, th: {}, loss: {}'. \
+              format(acc, recall, precision, specificity, auc, th, losses))
 
-            acc, recall, precision, specificity, auc, th, losses = \
-                eval_cls(net, valid_loader, gpu)
-            print('acc: {}, recall: {}, precision: {}, specificity: {}, auc: {}, th: {}, loss: {}'. \
-                  format(acc, recall, precision, specificity, auc, th, losses))
+        if losses < min_loss:
+            torch.save(net,
+                       dir_checkpoint + 'CP{}.pt'.format(epoch + 1))
+            print('Checkoutpoint {} saved !\n'.format(epoch + 1))
+            min_loss = losses
 
-            if losses < min_loss:
-                torch.save(net,
-                           dir_checkpoint + 'CP{}.pt'.format(epoch + 1))
-                print('Checkoutpoint {} saved !\n'.format(epoch + 1))
-                min_loss = losses
-
-            acc, recall, precision, specificity, auc, th, losses = \
-                eval_cls(net, test_loader, gpu)
-            print("test set:")
-            print('acc: {}, recall: {}, precision: {}, specificity: {}, auc: {}, th: {}, loss: {}'. \
-                  format(acc, recall, precision, specificity, auc, th, losses))
+        acc, recall, precision, specificity, auc, th, losses = \
+            eval_cls(net, test_loader, gpu)
+        print("test set:")
+        print('acc: {}, recall: {}, precision: {}, specificity: {}, auc: {}, th: {}, loss: {}'. \
+              format(acc, recall, precision, specificity, auc, th, losses))
+        print()
 
 
 if __name__ == '__main__':
     pretrained_path = "data/cp/resnet50-19c8e357.pth"
     patch_size = (224, 224)
     epochs = 100
-    batch_size = 32
-    lr = 0.01
+    batch_size = 48
+    lr = 0.001
+    classes = 2
 
     net = torchvision.models.resnet50(pretrained=False)
-    net.fc = (2048, 2)
-
     net.load_state_dict(torch.load(pretrained_path))
+    net.fc = nn.Linear(2048, classes)
+
     gpu = torch.cuda.is_available()
     if gpu:
         net.cuda()

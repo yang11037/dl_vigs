@@ -6,6 +6,7 @@
 """
 import os
 import cv2
+import logging
 
 import numpy as np
 import pandas as pd
@@ -28,7 +29,12 @@ class ClsDataset(data.Dataset):
 		img_name = self.data_df.iloc[index]["img_name"] + ".jpg"
 		img_path = os.path.join(self.data_dir, img_name)
 		img = cv2.imread(img_path)
-		img_crop = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+		try:
+			img_crop = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+		except Exception as e:
+			logging.exception(e)
+			print(img_path)
+			exit()
 
 		# x_left = self.data_df.iloc[index]["x"]
 		# y_top = self.data_df.iloc[index]["y"]
@@ -47,11 +53,12 @@ class ClsDataset(data.Dataset):
 			img_crop = img_new
 		img_crop = cv2.resize(img_crop, self.patch_size)
 
-		transformer = transforms.Compose([transforms.ToTensor(),
-										  transforms.Normalize
-										  (mean=[0.485, 0.456, 0.406],
-										   std=[0.229, 0.224, 0.225])])
+		transformer = transforms.Compose([transforms.ToTensor()])#,
+										  # transforms.Normalize
+										  # (mean=[0.485, 0.456, 0.406],
+										  #  std=[0.229, 0.224, 0.225])])
 		img_crop = transformer(img_crop)
+		img_crop = img_crop.float()
 
 		if self.mode == "inference":
 			return img_crop
@@ -64,11 +71,14 @@ class ClsDataset(data.Dataset):
 
 
 if __name__ == '__main__':
-	data_df = pd.read_csv("./data/train.csv", sep=',')
-	dataset = ClsDataset("/home/lqy/桌面/sofa_test/", data_df, "train", (224, 224))
-	dataloader = data.DataLoader(dataset, batch_size=10)
-	for i, (img, label) in enumerate(dataloader):
-		print(i)
-		print(img.shape)
-		print(label.shape)
-		exit()
+	# data_df = pd.read_csv("./data/train.csv", sep=',')
+	# dataset = ClsDataset("/home/lqy/桌面/sofa_test/", data_df, "train", (224, 224))
+	# dataloader = data.DataLoader(dataset, batch_size=10, shuffle=True)
+	# for i, (img, label) in enumerate(dataloader):
+	# 	print(i)
+	# 	print(img.shape)
+	# 	print(label)
+	# 	exit()
+
+	img = cv2.imread("/home/lqy/桌面/sofa_test/antarius-44-square-arm-loveseat-m1-w003217065_0.jpg")
+	print(img)

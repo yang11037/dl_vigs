@@ -48,13 +48,6 @@ def eval_cls(net, dataloader, gpu):
     criterion = nn.CrossEntropyLoss()
     i = 0
     for i, (img, label) in enumerate(dataloader):
-        img = np.asarray(img, np.float32)
-        label = np.asarray([label], np.float32)
-
-        img = torch.from_numpy(np.transpose(img, (2, 0, 1))).unsqueeze(0)
-        img = torch.cat([img, img, img], dim=1)
-        label = torch.from_numpy(label)
-
         if gpu:
             img = img.cuda()
             label = label.cuda()
